@@ -27,7 +27,7 @@ jobs:
             -JAPI_HOST=${{ secrets.API_HOST }} \
             -JAPI_PORT=${{ secrets.API_PORT }} \
             -JAPI_USER=${{ secrets.API_USER }} \
-            -JAPI_PASSWORD=${{ secrets.API_PASSWORD }}
+            -JAPI_PASS=${{ secrets.API_PASS }}
 
     - name: Upload Test Report
       uses: actions/upload-artifact@v4
