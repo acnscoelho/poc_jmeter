@@ -1,4 +1,4 @@
-# CI de Nìvel 01 - Disparo manual a partir de 1 clique
+# CI de Nível 01 - Disparo manual a partir de 1 clique
 
 name: 'Execução Manual'
 
@@ -7,7 +7,7 @@ on:
 
 jobs:
   performance-test:
-    runs-on: ['ubuntu-latest']
+    runs-on: ubuntu-latest
 
     env:
       API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
@@ -26,15 +26,18 @@ jobs:
       - name: Instalando dependências
         run: yarn
 
-      - name: Install dependencies
+      - name: Instalar dependências do script de upload
         run: npm install --prefix scripts dotenv axios csv-parser
 
-      - name: Download JMeter
+      - name: Download do Apache JMeter
         run: |
           wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
-          tar -xzf apache-jmeter-5.4.1.tgz 
+          tar -xzf apache-jmeter-5.4.1.tgz
 
-      - name: Run JMeter Test
+      - name: Criar diretórios de saída
+        run: mkdir -p results/dashboard
+
+      - name: Executar Testes com JMeter
         run: |
           ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
           -l results/result.jtl -e -o results/dashboard \
@@ -44,12 +47,12 @@ jobs:
           -JAPI_USER=$API_USER \
           -JAPI_PASS=$API_PASS
 
-
-      - name: Teste de performance
+      - name: Enviar resultado para o New Relic
         run: yarn run upload-nr
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload do Dashboard gerado
+        uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: relatorio-de-testes
-          path: ./cypress/reports
+          name: jmeter-dashboard
+          path: results/dashboard
