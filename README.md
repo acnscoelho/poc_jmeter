@@ -130,14 +130,22 @@ jobs:
   performance-test:
     runs-on: ubuntu-latest
 
+    env:
+      API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
+      API_HOST: ${{ secrets.API_HOST }}
+      API_PORT: ${{ secrets.API_PORT }}
+      API_USER: ${{ secrets.API_USER }}
+      API_PASS: ${{ secrets.API_PASS }}
+      NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
+
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup JMeter
       run: |
         sudo apt-get update
         sudo apt-get install -y openjdk-11-jre-headless
-        wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.4.1.tgz
+        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
         tar -xzf apache-jmeter-5.4.1.tgz
         export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
 
@@ -145,17 +153,22 @@ jobs:
       run: |
         ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
         -l results/result.jtl -e -o results/dashboard \
-        -JAPI_PROTOCOL=${{ secrets.API_PROTOCOL }} \
-        -JAPI_HOST=${{ secrets.API_HOST }} \
-        -JAPI_PORT=${{ secrets.API_PORT }} \
-        -JAPI_USER=${{ secrets.API_USER }} \
-        -JAPI_PASSWORD=${{ secrets.API_PASSWORD }}
+        -JAPI_PROTOCOL=$API_PROTOCOL \
+        -JAPI_HOST=$API_HOST \
+        -JAPI_PORT=$API_PORT \
+        -JAPI_USER=$API_USER \
+        -JAPI_PASS=$API_PASS
 
     - name: Upload Test Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: JMeter-Report
         path: results/dashboard
+
+    - name: Send metrics to New Relic
+      run: |
+        npm install --prefix scripts dotenv axios csv-parser
+        node scripts/upload-to-newrelic.js
 
 ```
 
@@ -167,18 +180,17 @@ jobs:
 poc-jmeter/
 ├── .github/
 │   └── workflows/
-│        └── jmeter-test.yml
-├── test-plan/
+│       └── jmeter-performance.yml
+├── jmeter/
 │   └── poc_transferencias.jmx
-├── results/
-│   ├── result.jtl
-│   ├── dashboard/
+├── images/
 │   ├── jmeter-dashboard.png
 │   └── newrelic-dashboard.png
-├── scripts/
-│   └── upload-to-newrelic.js
-├── .env.example
-└── README.md
+├── results/
+│   ├── result.jtl
+│   └── dashboard/
+├── .env
+├── README.md
 ```
 
 ---
@@ -187,11 +199,11 @@ poc-jmeter/
 
 ### ✅ Dashboard JMeter
 
-![Dashboard JMeter](results/jmeter-dashboard.png)
+![Dashboard JMeter](images/jmeter-dashboard.png)
 
 ### ✅ Dashboard New Relic
 
-![Dashboard New Relic](results/newrelic-dashboard.png)
+![Dashboard New Relic](images/newrelic-dashboard.png)
 
 > 💡 Todos os requests foram executados com sucesso (100% de acerto), com tempos de resposta abaixo de 40ms no pior cenário (Login).
 
@@ -294,7 +306,7 @@ $env:API_PASS = "your_password_here"
   -JAPI_HOST=$env:API_HOST `
   -JAPI_PORT=$env:API_PORT `
   -JAPI_USER=$env:API_USER `
-  -JAPI_PASSWORD=$env:API_PASS
+  -JAPI_PASS=$env:API_PASS
 ```
 
 ---
@@ -349,14 +361,22 @@ jobs:
   performance-test:
     runs-on: ubuntu-latest
 
+    env:
+      API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
+      API_HOST: ${{ secrets.API_HOST }}
+      API_PORT: ${{ secrets.API_PORT }}
+      API_USER: ${{ secrets.API_USER }}
+      API_PASS: ${{ secrets.API_PASS }}
+      NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
+
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup JMeter
       run: |
         sudo apt-get update
         sudo apt-get install -y openjdk-11-jre-headless
-        wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.4.1.tgz
+        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
         tar -xzf apache-jmeter-5.4.1.tgz
         export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
 
@@ -364,17 +384,22 @@ jobs:
       run: |
         ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
         -l results/result.jtl -e -o results/dashboard \
-        -JAPI_PROTOCOL=${{ secrets.API_PROTOCOL }} \
-        -JAPI_HOST=${{ secrets.API_HOST }} \
-        -JAPI_PORT=${{ secrets.API_PORT }} \
-        -JAPI_USER=${{ secrets.API_USER }} \
-        -JAPI_PASSWORD=${{ secrets.API_PASSWORD }}
+        -JAPI_PROTOCOL=$API_PROTOCOL \
+        -JAPI_HOST=$API_HOST \
+        -JAPI_PORT=$API_PORT \
+        -JAPI_USER=$API_USER \
+        -JAPI_PASS=$API_PASS
 
     - name: Upload Test Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: JMeter-Report
         path: results/dashboard
+
+    - name: Send metrics to New Relic
+      run: |
+        npm install --prefix scripts dotenv axios csv-parser
+        node scripts/upload-to-newrelic.js
 ```
 🔐 Variables must be defined in Settings > Secrets and variables > Actions in your GitHub repository.
 
@@ -384,18 +409,17 @@ jobs:
 poc-jmeter/
 ├── .github/
 │   └── workflows/
-│        └── jmeter-test.yml
-├── test-plan/
+│       └── jmeter-performance.yml
+├── jmeter/
 │   └── poc_transferencias.jmx
-├── results/
-│   ├── result.jtl
-│   ├── dashboard/
+├── images/
 │   ├── jmeter-dashboard.png
 │   └── newrelic-dashboard.png
-├── scripts/
-│   └── upload-to-newrelic.js
-├── .env.example
-└── README.md
+├── results/
+│   ├── result.jtl
+│   └── dashboard/
+├── .env
+├── README.md
 ```
 
 ---
@@ -404,11 +428,11 @@ poc-jmeter/
 
 ### ✅ JMeter Dashboard
 
-![Dashboard JMeter](results/jmeter-dashboard.png)
+![Dashboard JMeter](images/jmeter-dashboard.png)
 
 ### ✅ New Relic Dashboard
 
-![Dashboard New Relic](results/newrelic-dashboard.png)
+![Dashboard New Relic](images/newrelic-dashboard.png)
 
 > 💡 All requests were successfully executed (100% success rate), with response times under 40ms in the worst-case scenario (Login).
 
