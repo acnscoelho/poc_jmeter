@@ -3,10 +3,17 @@ name: Run JMeter Performance Test
 on:
   workflow_dispatch:
 
-
 jobs:
   performance-test:
     runs-on: ubuntu-latest
+
+    env:
+      API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
+      API_HOST: ${{ secrets.API_HOST }}
+      API_PORT: ${{ secrets.API_PORT }}
+      API_USER: ${{ secrets.API_USER }}
+      API_PASS: ${{ secrets.API_PASS }}
+      NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
 
     steps:
     - uses: actions/checkout@v4
@@ -15,21 +22,27 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y openjdk-11-jre-headless
-        wget wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
+        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
+        tar -xzf apache-jmeter-5.4.1.tgz
         export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
 
     - name: Run JMeter Test
       run: |
-            ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
-            -l results/result.jtl -e -o results/dashboard \
-            -JAPI_PROTOCOL=${{ secrets.API_PROTOCOL }} \
-            -JAPI_HOST=${{ secrets.API_HOST }} \
-            -JAPI_PORT=${{ secrets.API_PORT }} \
-            -JAPI_USER=${{ secrets.API_USER }} \
-            -JAPI_PASS=${{ secrets.API_PASS }}
+        ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
+        -l results/result.jtl -e -o results/dashboard \
+        -JAPI_PROTOCOL=$API_PROTOCOL \
+        -JAPI_HOST=$API_HOST \
+        -JAPI_PORT=$API_PORT \
+        -JAPI_USER=$API_USER \
+        -JAPI_PASS=$API_PASS
 
     - name: Upload Test Report
       uses: actions/upload-artifact@v4
       with:
         name: JMeter-Report
         path: results/dashboard
+
+    - name: Send metrics to New Relic
+      run: |
+        npm install --prefix scripts dotenv axios csv-parser
+        node scripts/upload-to-newrelic.js

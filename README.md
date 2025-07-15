@@ -26,7 +26,7 @@ Fluxo testado no JMeter:
 
 - Ferramenta: Apache JMeter 5.4.1
 - Execução: CLI (modo non-GUI)
-- Usuários: 600 threads
+- Usuários: 50 threads
 - Ramp-up: 30 segundos
 - Loops: 1
 - Resultados: `results/result.jtl` e `results/dashboard/`
@@ -244,7 +244,7 @@ Test flow in JMeter:
 
 - Tool: Apache JMeter 5.4.1
 - Execution: CLI (non-GUI mode)
-- Users: 600 threads
+- Users: 50 threads
 - Ramp-up: 30 seconds
 - Loops: 1
 - Results: `results/result.jtl` and `results/dashboard/`
