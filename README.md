@@ -148,6 +148,9 @@ jobs:
         wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
         tar -xzf apache-jmeter-5.4.1.tgz
         export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
+         
+    - name: Create results folder
+      run: mkdir -p results/dashboard    
 
     - name: Run JMeter Test
       run: |
@@ -379,6 +382,9 @@ jobs:
         wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
         tar -xzf apache-jmeter-5.4.1.tgz
         export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
+
+    - name: Create results folder
+      run: mkdir -p results/dashboard    
 
     - name: Run JMeter Test
       run: |
