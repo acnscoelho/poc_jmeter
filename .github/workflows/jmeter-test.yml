@@ -1,0 +1,36 @@
+name: Run JMeter Performance Test
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup JMeter
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openjdk-11-jre-headless
+        wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.4.1.tgz
+        tar -xzf apache-jmeter-5.4.1.tgz
+        export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
+
+    - name: Run JMeter Test
+      run: |
+            ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
+            -l results/result.jtl -e -o results/dashboard \
+            -JAPI_PROTOCOL=${{ secrets.API_PROTOCOL }} \
+            -JAPI_HOST=${{ secrets.API_HOST }} \
+            -JAPI_PORT=${{ secrets.API_PORT }} \
+            -JAPI_USER=${{ secrets.API_USER }} \
+            -JAPI_PASSWORD=${{ secrets.API_PASSWORD }}
+
+    - name: Upload Test Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: JMeter-Report
+        path: results/dashboard

@@ -1,0 +1,25 @@
+# Config/credentials
+.env
+.env.local
+*.jmx.backup
+
+# Relatórios JMeter
+/results/*
+!results/dashboard/
+!results/dashboard/index.html
+
+# New Relic configs (caso tenha)
+newrelic.config
+
+# Node modules
+node_modules
+
+# IDEs
+.vscode
+.idea
+*.iml
+
+# JMeter logs e resultados
+*.jtl
+*.log
+results/

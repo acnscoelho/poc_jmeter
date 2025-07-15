@@ -1,0 +1,17 @@
+{
+  "name": "poc-jmeter",
+  "version": "1.0.0",
+  "description": "[🇧🇷 Portuguese](README.md)",
+  "main": "index.js",
+  "scripts": {
+    "upload-nr": "node scripts/upload-to-newrelic.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^17.2.0"
+  }
+}
