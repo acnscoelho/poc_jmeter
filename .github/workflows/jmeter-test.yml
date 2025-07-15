@@ -39,6 +39,15 @@ jobs:
         -JAPI_USER=$API_USER \
         -JAPI_PASS=$API_PASS
 
+    - name: Generate Dashboard
+      if: success()
+      run: |
+        if [ -f results/result.jtl ] && grep -q ',true,' results/result.jtl; then
+          ./apache-jmeter-5.4.1/bin/jmeter -g results/result.jtl -o results/dashboard
+          else
+          echo "Nenhum teste com sucesso. Dashboard não será gerado."
+        fi
+
     - name: Upload Test Report
       uses: actions/upload-artifact@v4
       with:
