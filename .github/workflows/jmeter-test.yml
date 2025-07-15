@@ -1,31 +1,30 @@
-name: performance-test
+# CI de Nìvel 01 - Disparo manual a partir de 1 clique
+
+name: 'Execução Manual'
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
   performance-test:
-    runs-on: ubuntu-latest
+    runs-on: ['ubuntu-latest']
+
     env:
-      # Variáveis carregadas do arquivo .env
       API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
       API_HOST: ${{ secrets.API_HOST }}
       API_PORT: ${{ secrets.API_PORT }}
       API_USER: ${{ secrets.API_USER }}
       API_PASS: ${{ secrets.API_PASS }}
       NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
-
+  
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+      - name: Instalando Yarn
+        run: npm install -g yarn
+
+      - name: Instalando dependências
+        run: yarn
 
       - name: Install dependencies
         run: npm install --prefix scripts dotenv axios csv-parser
@@ -33,31 +32,23 @@ jobs:
       - name: Download JMeter
         run: |
           wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
-          tar -xzf apache-jmeter-5.4.1.tgz
+          tar -xzf apache-jmeter-5.4.1.tgz 
 
       - name: Run JMeter Test
         run: |
-          mkdir -p results
-          ./apache-jmeter-5.4.1/bin/jmeter \
-            -n \
-            -t test-plan/poc_transferencias.jmx \
-            -l results/result.jtl
+          .\apache-jmeter-5.4.1\bin\jmeter -n -t test-plan\poc_transferencias.jmx \
+          -l results\result.jtl -e -o results\dashboard \
+          -JAPI_PROTOCOL=$API_PROTOCOL \
+          -JAPI_HOST=$API_HOST \
+          -JAPI_PORT=$API_PORT \
+          -JAPI_USER=$API_USER \
+          -JAPI_PASS=$API_PASS     
 
-      - name: Generate Dashboard (only if test has success)
-        run: |
-          mkdir -p results/dashboard
-          if grep -q ',true,' results/result.jtl; then
-            ./apache-jmeter-5.4.1/bin/jmeter -g results/result.jtl -o results/dashboard
-          else
-            echo "Nenhum teste com sucesso. Dashboard não será gerado."
-          fi
+      - name: Teste de performance
+        run: yarn run upload-nr
 
-      - name: Upload JMeter Dashboard Artifact
-        if: success()
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
-          name: jmeter-dashboard
-          path: results/dashboard
-
-      - name: Upload to New Relic
-        run: node scripts/upload-to-newrelic.js
+          name: relatorio-de-testes
+          path: ./cypress/reports
