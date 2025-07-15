@@ -15,8 +15,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y openjdk-11-jre-headless
-        wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.4.1.tgz
-        tar -xzf apache-jmeter-5.4.1.tgz
+        wget wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
         export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
 
     - name: Run JMeter Test
