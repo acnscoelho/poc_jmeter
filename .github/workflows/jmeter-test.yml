@@ -36,13 +36,14 @@ jobs:
 
       - name: Run JMeter Test
         run: |
-          .\apache-jmeter-5.4.1\bin\jmeter -n -t test-plan\poc_transferencias.jmx \
-          -l results\result.jtl -e -o results\dashboard \
+          ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
+          -l results/result.jtl -e -o results/dashboard \
           -JAPI_PROTOCOL=$API_PROTOCOL \
           -JAPI_HOST=$API_HOST \
           -JAPI_PORT=$API_PORT \
           -JAPI_USER=$API_USER \
-          -JAPI_PASS=$API_PASS     
+          -JAPI_PASS=$API_PASS
+
 
       - name: Teste de performance
         run: yarn run upload-nr
