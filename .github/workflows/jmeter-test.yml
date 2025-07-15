@@ -2,75 +2,62 @@ name: performance-test
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  run-jmeter:
+  performance-test:
     runs-on: ubuntu-latest
     env:
-      API_USER: julio.lima
-      API_PASS: 123456
-      API_HOST: localhost
-      API_PORT: 3000
-      API_PROTOCOL: http
+      # Variáveis carregadas do arquivo .env
+      API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
+      API_HOST: ${{ secrets.API_HOST }}
+      API_PORT: ${{ secrets.API_PORT }}
+      API_USER: ${{ secrets.API_USER }}
+      API_PASS: ${{ secrets.API_PASS }}
       NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install JMeter
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install --prefix scripts dotenv axios csv-parser
+
+      - name: Download JMeter
         run: |
           wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
           tar -xzf apache-jmeter-5.4.1.tgz
 
-      - name: Create results folder
-        run: mkdir -p results/dashboard
-
-      - name: Configure JMeter properties
+      - name: Run JMeter Test
         run: |
-          echo "jmeter.save.saveservice.output_format=csv" >> jmeter.properties
-          echo "jmeter.save.saveservice.assertion_results_failure_message=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.bytes=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.sent_bytes=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.label=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.latency=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.response_code=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.response_message=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.successful=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.thread_counts=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.thread_name=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.time=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.timestamp=true" >> jmeter.properties
-          echo "jmeter.save.saveservice.connect_time=true" >> jmeter.properties
-
-      - name: Run JMeter Test Plan
-        run: |
-          ./apache-jmeter-5.4.1/bin/jmeter -n \
+          mkdir -p results
+          ./apache-jmeter-5.4.1/bin/jmeter \
+            -n \
             -t test-plan/poc_transferencias.jmx \
-            -l results/result.jtl \
-            -q jmeter.properties
+            -l results/result.jtl
 
-      - name: Verificar saída result.jtl
+      - name: Generate Dashboard (only if test has success)
         run: |
-          if [ -f results/result.jtl ]; then
-            head results/result.jtl
-          else
-            echo "Arquivo results/result.jtl não encontrado."
-          fi
-
-      - name: Generate HTML Report (se houver sucesso)
-        run: |
-          if [ -f results/result.jtl ] && grep -q ',true,' results/result.jtl; then
+          mkdir -p results/dashboard
+          if grep -q ',true,' results/result.jtl; then
             ./apache-jmeter-5.4.1/bin/jmeter -g results/result.jtl -o results/dashboard
           else
             echo "Nenhum teste com sucesso. Dashboard não será gerado."
           fi
 
-      - name: Upload JMeter dashboard
+      - name: Upload JMeter Dashboard Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JMeter-Report
+          name: jmeter-dashboard
           path: results/dashboard
-          if-no-files-found: warn
+
+      - name: Upload to New Relic
+        run: node scripts/upload-to-newrelic.js
