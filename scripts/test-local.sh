@@ -81,8 +81,27 @@ echo "🧪 Executando teste do JMeter..."
     -n \
     -t test-plan/poc_transferencias.jmx \
     -l results/result.jtl \
-    -p jmeter-dashboard.properties \
+    -Jjmeter.save.saveservice.output_format=csv \
     -Jjmeter.save.saveservice.assertion_results=none \
+    -Jjmeter.save.saveservice.bytes=true \
+    -Jjmeter.save.saveservice.label=true \
+    -Jjmeter.save.saveservice.latency=true \
+    -Jjmeter.save.saveservice.response_code=true \
+    -Jjmeter.save.saveservice.response_message=true \
+    -Jjmeter.save.saveservice.successful=true \
+    -Jjmeter.save.saveservice.thread_counts=true \
+    -Jjmeter.save.saveservice.thread_name=true \
+    -Jjmeter.save.saveservice.time=true \
+    -Jjmeter.save.saveservice.connect_time=true \
+    -Jjmeter.save.saveservice.samplerData=false \
+    -Jjmeter.save.saveservice.responseData=false \
+    -Jjmeter.save.saveservice.responseHeaders=false \
+    -Jjmeter.save.saveservice.requestHeaders=false \
+    -Jjmeter.save.saveservice.encoding=false \
+    -Jjmeter.save.saveservice.url=true \
+    -Jjmeter.save.saveservice.sent_bytes=true \
+    -Jjmeter.save.saveservice.idle_time=true \
+    -Jjmeter.save.saveservice.csv.separator=, \
     -JAPI_PROTOCOL=http \
     -JAPI_HOST=localhost \
     -JAPI_PORT=3000 \
