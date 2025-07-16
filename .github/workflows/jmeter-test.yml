@@ -87,6 +87,12 @@ jobs:
           echo "Arquivo result.jtl gerado com sucesso!"
           ls -la results/
 
+      - name: Exibe as primeiras linhas do result.jtl para debug
+        run: |
+          echo "=== Início do result.jtl ==="
+          head -20 results/result.jtl || cat results/result.jtl
+          echo "=== Fim do trecho ==="
+
       - name: Gera dashboard do JMeter
         run: |
           ./apache-jmeter-5.4.1/bin/jmeter \
