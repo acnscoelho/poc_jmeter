@@ -72,6 +72,7 @@ jobs:
             -t test-plan/poc_transferencias.jmx \
             -l results/result.jtl \
             -p jmeter-dashboard.properties \
+            -Jjmeter.save.saveservice.assertion_results=none \
             -JAPI_PROTOCOL=$API_PROTOCOL \
             -JAPI_HOST=$API_HOST \
             -JAPI_PORT=$API_PORT \

@@ -82,6 +82,7 @@ echo "🧪 Executando teste do JMeter..."
     -t test-plan/poc_transferencias.jmx \
     -l results/result.jtl \
     -p jmeter-dashboard.properties \
+    -Jjmeter.save.saveservice.assertion_results=none \
     -JAPI_PROTOCOL=http \
     -JAPI_HOST=localhost \
     -JAPI_PORT=3000 \
