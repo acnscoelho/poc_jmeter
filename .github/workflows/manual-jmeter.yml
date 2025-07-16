@@ -1,13 +1,169 @@
-name: Teste de Performance com JMeter e New Relic
+name: 'Teste de Performance com JMeter e New Relic'
 
 on:
   workflow_dispatch:
 
 jobs:
-  test:
+  performance-test:
     runs-on: ubuntu-latest
+
+    env:
+      API_PROTOCOL: http
+      API_HOST: localhost
+      API_PORT: 3000
+      API_USER: ${{ secrets.API_USER }}
+      API_PASS: ${{ secrets.API_PASS }}
+      NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
+
     steps:
-      - name: Checkout
+      - name: Checkout do código
         uses: actions/checkout@v4
-      - name: Hello World
-        run: echo "Pipeline criada com sucesso!"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Instala dependências do projeto
+        run: npm ci
+
+      - name: Baixa e extrai o Apache JMeter
+        run: |
+          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
+          tar -xzf apache-jmeter-5.4.1.tgz
+
+      - name: Inicia a API mock
+        run: |
+          nohup node mock-api/server.js > mock-api.log 2>&1 &
+          echo "Mock API iniciada em background"
+
+      - name: Aguarda a API mock iniciar e verifica se está funcionando
+        run: |
+          echo "Aguardando API mock inicializar..."
+          sleep 10
+          
+          # Verifica se a API está respondendo
+          for i in {1..30}; do
+            if curl -s http://localhost:3000/login > /dev/null 2>&1; then
+              echo "API mock está funcionando!"
+              break
+            fi
+            echo "Tentativa $i: API ainda não está pronta, aguardando..."
+            sleep 2
+          done
+          
+          # Verifica se a API está rodando
+          if ! curl -s http://localhost:3000/login > /dev/null 2>&1; then
+            echo "ERRO: API mock não está respondendo após 60 segundos"
+            cat mock-api.log
+            exit 1
+          fi
+
+      - name: Limpa e recria diretório para relatórios
+        run: |
+          rm -rf results/dashboard
+          mkdir -p results/dashboard
+
+      - name: Executa testes de performance com JMeter
+        run: |
+          ./apache-jmeter-5.4.1/bin/jmeter \
+            -n \
+            -t test-plan/poc_transferencias.jmx \
+            -l results/result.jtl \
+            -Jjmeter.save.saveservice.output_format=csv \
+            -Jjmeter.save.saveservice.assertion_results=none \
+            -Jjmeter.save.saveservice.bytes=true \
+            -Jjmeter.save.saveservice.label=true \
+            -Jjmeter.save.saveservice.latency=true \
+            -Jjmeter.save.saveservice.response_code=true \
+            -Jjmeter.save.saveservice.response_message=true \
+            -Jjmeter.save.saveservice.successful=true \
+            -Jjmeter.save.saveservice.thread_counts=true \
+            -Jjmeter.save.saveservice.thread_name=true \
+            -Jjmeter.save.saveservice.time=true \
+            -Jjmeter.save.saveservice.connect_time=true \
+            -Jjmeter.save.saveservice.samplerData=false \
+            -Jjmeter.save.saveservice.responseData=false \
+            -Jjmeter.save.saveservice.responseHeaders=false \
+            -Jjmeter.save.saveservice.requestHeaders=false \
+            -Jjmeter.save.saveservice.encoding=false \
+            -Jjmeter.save.saveservice.url=true \
+            -Jjmeter.save.saveservice.sent_bytes=true \
+            -Jjmeter.save.saveservice.idle_time=true \
+            -Jjmeter.save.saveservice.csv.separator=, \
+            -JAPI_PROTOCOL=$API_PROTOCOL \
+            -JAPI_HOST=$API_HOST \
+            -JAPI_PORT=$API_PORT \
+            -JAPI_USER=$API_USER \
+            -JAPI_PASS=$API_PASS
+
+      - name: Verifica se o arquivo result.jtl foi gerado
+        run: |
+          if [ ! -f "results/result.jtl" ]; then
+            echo "ERRO: Arquivo result.jtl não foi gerado!"
+            exit 1
+          fi
+          echo "Arquivo result.jtl gerado com sucesso!"
+          ls -la results/
+
+      - name: Exibe as primeiras linhas do result.jtl para debug
+        run: |
+          echo "=== Início do result.jtl ==="
+          head -20 results/result.jtl || cat results/result.jtl
+          echo "=== Fim do trecho ==="
+
+      - name: Remove coluna failureMessage do result.jtl (Python)
+        run: |
+          echo "import csv
+with open('results/result.jtl', newline='') as infile, open('results/result_clean.jtl', 'w', newline='') as outfile:
+    reader = csv.DictReader(infile)
+    fieldnames = [f for f in reader.fieldnames if f != 'failureMessage']
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for row in reader:
+        row.pop('failureMessage', None)
+        writer.writerow(row)" > remove_failure_message.py
+          python3 remove_failure_message.py
+          mv results/result_clean.jtl results/result.jtl
+          rm remove_failure_message.py
+
+      - name: Gera dashboard do JMeter
+        run: |
+          ./apache-jmeter-5.4.1/bin/jmeter \
+            -g results/result.jtl \
+            -o results/dashboard
+
+      - name: Verifica se o dashboard foi gerado
+        run: |
+          if [ ! -d "results/dashboard" ] || [ -z "$(ls -A results/dashboard)" ]; then
+            echo "ERRO: Dashboard não foi gerado!"
+            exit 1
+          fi
+          echo "Dashboard gerado com sucesso!"
+          ls -la results/dashboard/
+
+      - name: Envia dados para o New Relic
+        run: |
+          echo "NEWRELIC_API_KEY=$NEWRELIC_API_KEY" > .env
+          npm run upload-nr
+
+      - name: Faz upload do dashboard como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-dashboard
+          path: results/dashboard
+          if-no-files-found: error
+
+      - name: Faz upload do arquivo result.jtl como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-results
+          path: results/result.jtl
+          if-no-files-found: error
+
+      - name: Exibe logs da API mock (para debug)
+        if: always()
+        run: |
+          echo "=== Logs da API Mock ==="
+          cat mock-api.log || echo "Arquivo de log não encontrado"
