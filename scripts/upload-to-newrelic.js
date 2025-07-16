@@ -4,7 +4,7 @@ const csv = require("csv-parser");
 const axios = require("axios");
 
 const NEWRELIC_API_KEY = process.env.NEWRELIC_API_KEY;
-const JTL_FILE = "./results/result.jtl";
+const JTL_FILE = "./results/result_clean.jtl";
 
 async function main() {
   console.log("Iniciando upload de métricas para o New Relic...");
@@ -16,15 +16,23 @@ async function main() {
   }
 
   // Verifica se o arquivo JTL existe
-  if (!fs.existsSync(JTL_FILE)) {
-    console.error(`ERRO: Arquivo ${JTL_FILE} não encontrado!`);
-    process.exit(1);
+  let jtlFile = JTL_FILE;
+  if (!fs.existsSync(jtlFile)) {
+    // Tenta usar o arquivo original se o limpo não existir
+    jtlFile = "./results/result.jtl";
+    if (!fs.existsSync(jtlFile)) {
+      console.error(`ERRO: Arquivo ${JTL_FILE} ou ./results/result.jtl não encontrado!`);
+      process.exit(1);
+    }
+    console.log(`Usando arquivo original: ${jtlFile}`);
+  } else {
+    console.log(`Usando arquivo limpo: ${jtlFile}`);
   }
 
-  console.log(`Lendo arquivo: ${JTL_FILE}`);
+  console.log(`Lendo arquivo: ${jtlFile}`);
   const metricsMap = {};
 
-  fs.createReadStream(JTL_FILE)
+  fs.createReadStream(jtlFile)
     .pipe(csv())
     .on("data", (row) => {
       const label = row.label;
