@@ -113,22 +113,10 @@ jobs:
           head -20 results/result.jtl || cat results/result.jtl
           echo "=== Fim do trecho ==="
 
-      - name: Remove coluna failureMessage do result.jtl (Python)
+      - name: Remove coluna failureMessage do result.jtl (Node.js)
         run: |
-          cat <<EOF > remove_failure_message.py
-import csv
-with open('results/result.jtl', newline='') as infile, open('results/result_clean.jtl', 'w', newline='') as outfile:
-    reader = csv.DictReader(infile)
-    fieldnames = [f for f in reader.fieldnames if f != 'failureMessage']
-    writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-    writer.writeheader()
-    for row in reader:
-        row.pop('failureMessage', None)
-        writer.writerow(row)
-EOF
-          python3 remove_failure_message.py
+          node scripts/clean-jmeter-results.js results/result.jtl results/result_clean.jtl
           mv results/result_clean.jtl results/result.jtl
-          rm remove_failure_message.py
 
       - name: Gera dashboard do JMeter
         run: |
