@@ -117,32 +117,10 @@ jobs:
         run: |
           node scripts/clean-jmeter-results.js results/result.jtl results/result_clean.jtl
 
-      - name: Gera dashboard do JMeter
-        run: |
-          ./apache-jmeter-5.4.1/bin/jmeter \
-            -g results/result_clean.jtl \
-            -o results/dashboard
-
-      - name: Verifica se o dashboard foi gerado
-        run: |
-          if [ ! -d "results/dashboard" ] || [ -z "$(ls -A results/dashboard)" ]; then
-            echo "ERRO: Dashboard não foi gerado!"
-            exit 1
-          fi
-          echo "Dashboard gerado com sucesso!"
-          ls -la results/dashboard/
-
       - name: Envia dados para o New Relic
         run: |
           echo "NEWRELIC_API_KEY=$NEWRELIC_API_KEY" > .env
           npm run upload-nr
-
-      - name: Faz upload do dashboard como artefato
-        uses: actions/upload-artifact@v4
-        with:
-          name: jmeter-dashboard
-          path: results/dashboard
-          if-no-files-found: error
 
       - name: Faz upload do arquivo result.jtl como artefato
         uses: actions/upload-artifact@v4
