@@ -37,6 +37,10 @@ jobs:
       - name: Criar diretórios de saída
         run: mkdir -p results/dashboard
 
+      - name: Start Mock API
+        run: |
+          nohup node mock-api/server.js > mock-api.log 2>&1 &
+  
       - name: Executar Testes com JMeter
         run: |
           ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \

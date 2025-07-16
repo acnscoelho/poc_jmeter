@@ -4,7 +4,8 @@
   "description": "[🇧🇷 Portuguese](README.md)",
   "main": "index.js",
   "scripts": {
-    "upload-nr": "node scripts/upload-to-newrelic.js"
+    "upload-nr": "node scripts/upload-to-newrelic.js",
+    "start:mock-api": "node mock-api/server.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +13,7 @@
   "dependencies": {
     "axios": "^1.10.0",
     "csv-parser": "^3.2.0",
-    "dotenv": "^17.2.0"
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0"
   }
 }
