@@ -116,12 +116,11 @@ jobs:
       - name: Remove coluna failureMessage do result.jtl (Node.js)
         run: |
           node scripts/clean-jmeter-results.js results/result.jtl results/result_clean.jtl
-          mv results/result_clean.jtl results/result.jtl
 
       - name: Gera dashboard do JMeter
         run: |
           ./apache-jmeter-5.4.1/bin/jmeter \
-            -g results/result.jtl \
+            -g results/result_clean.jtl \
             -o results/dashboard
 
       - name: Verifica se o dashboard foi gerado
@@ -149,7 +148,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-results
-          path: results/result.jtl
+          path: results/result_clean.jtl
           if-no-files-found: error
 
       - name: Exibe logs da API mock (para debug)
