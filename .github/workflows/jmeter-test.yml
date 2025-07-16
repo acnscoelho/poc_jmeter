@@ -113,13 +113,20 @@ jobs:
           head -20 results/result.jtl || cat results/result.jtl
           echo "=== Fim do trecho ==="
 
-      - name: Remove coluna failureMessage do result.jtl
+      - name: Remove coluna failureMessage do result.jtl (Python)
         run: |
-          col=$(head -1 results/result.jtl | tr ',' '\n' | grep -n '^failureMessage$' | cut -d: -f1)
-          if [ -n "$col" ]; then
-            cut --complement -d, -f"$col" results/result.jtl > results/result_clean.jtl
-            mv results/result_clean.jtl results/result.jtl
-          fi
+          python3 -c "
+import csv
+with open('results/result.jtl', newline='') as infile, open('results/result_clean.jtl', 'w', newline='') as outfile:
+    reader = csv.DictReader(infile)
+    fieldnames = [f for f in reader.fieldnames if f != 'failureMessage']
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for row in reader:
+        row.pop('failureMessage', None)
+        writer.writerow(row)
+"
+          mv results/result_clean.jtl results/result.jtl
 
       - name: Gera dashboard do JMeter
         run: |
