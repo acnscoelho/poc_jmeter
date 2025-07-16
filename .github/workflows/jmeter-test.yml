@@ -41,15 +41,23 @@ jobs:
         run: |
           nohup node mock-api/server.js > mock-api.log 2>&1 &
   
-      - name: Executar Testes com JMeter
+      - name: Run JMeter Test
         run: |
           ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
-          -l results/result.jtl -e -o results/dashboard \
+          -l results/result.jtl \
+          -Jjmeter.save.saveservice.output_format=csv \
+          -Jjmeter.save.saveservice.print_field_names=true \
           -JAPI_PROTOCOL=$API_PROTOCOL \
           -JAPI_HOST=$API_HOST \
           -JAPI_PORT=$API_PORT \
           -JAPI_USER=$API_USER \
           -JAPI_PASS=$API_PASS
+
+      - name: Generate HTML Dashboard
+        if: ${{ !cancelled() && success() && hashFiles('results/result.jtl') != '' }}
+        run: |
+          ./apache-jmeter-5.4.1/bin/jmeter -g results/result.jtl -o results/dashboard
+
 
       - name: Enviar resultado para o New Relic
         run: yarn run upload-nr
