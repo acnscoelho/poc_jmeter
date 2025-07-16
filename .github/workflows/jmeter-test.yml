@@ -55,7 +55,7 @@ jobs:
       - name: Gera dashboard do JMeter
         run: |
           ./apache-jmeter-5.4.1/bin/jmeter \
-            -g results/result.jtl \
+            -e results/result.jtl \
             -o results/dashboard
 
       - name: Envia dados para o New Relic
