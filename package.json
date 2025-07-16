@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "upload-nr": "node scripts/upload-to-newrelic.js",
-    "start:mock-api": "node mock-api/server.js"
+    "start:mock-api": "node mock-api/server.js",
+    "test-local": "bash scripts/test-local.sh"
   },
   "keywords": [],
   "author": "",

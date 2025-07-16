@@ -19,12 +19,14 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Instala dependências do projeto (Node.js)
-        run: |
-          npm install
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
-      - name: Instala dependências adicionais para scripts
-        run: npm install --prefix scripts dotenv axios csv-parser
+      - name: Instala dependências do projeto
+        run: npm ci
 
       - name: Baixa e extrai o Apache JMeter
         run: |
@@ -32,13 +34,36 @@ jobs:
           tar -xzf apache-jmeter-5.4.1.tgz
 
       - name: Inicia a API mock
-        run: nohup node mock-api/server.js > mock-api.log 2>&1 &
+        run: |
+          nohup node mock-api/server.js > mock-api.log 2>&1 &
+          echo "Mock API iniciada em background"
 
-      - name: Aguarda a API mock iniciar
-        run: sleep 5
+      - name: Aguarda a API mock iniciar e verifica se está funcionando
+        run: |
+          echo "Aguardando API mock inicializar..."
+          sleep 10
+          
+          # Verifica se a API está respondendo
+          for i in {1..30}; do
+            if curl -s http://localhost:3000/login > /dev/null 2>&1; then
+              echo "API mock está funcionando!"
+              break
+            fi
+            echo "Tentativa $i: API ainda não está pronta, aguardando..."
+            sleep 2
+          done
+          
+          # Verifica se a API está rodando
+          if ! curl -s http://localhost:3000/login > /dev/null 2>&1; then
+            echo "ERRO: API mock não está respondendo após 60 segundos"
+            cat mock-api.log
+            exit 1
+          fi
 
-      - name: Cria diretório para relatórios
-        run: mkdir -p results/dashboard
+      - name: Limpa e recria diretório para relatórios
+        run: |
+          rm -rf results/dashboard
+          mkdir -p results/dashboard
 
       - name: Executa testes de performance com JMeter
         run: |
@@ -52,18 +77,52 @@ jobs:
             -JAPI_USER=$API_USER \
             -JAPI_PASS=$API_PASS
 
+      - name: Verifica se o arquivo result.jtl foi gerado
+        run: |
+          if [ ! -f "results/result.jtl" ]; then
+            echo "ERRO: Arquivo result.jtl não foi gerado!"
+            exit 1
+          fi
+          echo "Arquivo result.jtl gerado com sucesso!"
+          ls -la results/
+
       - name: Gera dashboard do JMeter
         run: |
           ./apache-jmeter-5.4.1/bin/jmeter \
-            -e results/result.jtl \
+            -g results/result.jtl \
             -o results/dashboard
 
+      - name: Verifica se o dashboard foi gerado
+        run: |
+          if [ ! -d "results/dashboard" ] || [ -z "$(ls -A results/dashboard)" ]; then
+            echo "ERRO: Dashboard não foi gerado!"
+            exit 1
+          fi
+          echo "Dashboard gerado com sucesso!"
+          ls -la results/dashboard/
+
       - name: Envia dados para o New Relic
-        run: npm run upload-nr
+        run: |
+          # Cria arquivo .env temporário com as variáveis de ambiente
+          echo "NEWRELIC_API_KEY=$NEWRELIC_API_KEY" > .env
+          npm run upload-nr
 
       - name: Faz upload do dashboard como artefato
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-dashboard
           path: results/dashboard
-          if-no-files-found: warn
+          if-no-files-found: error
+
+      - name: Faz upload do arquivo result.jtl como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-results
+          path: results/result.jtl
+          if-no-files-found: error
+
+      - name: Exibe logs da API mock (para debug)
+        if: always()
+        run: |
+          echo "=== Logs da API Mock ==="
+          cat mock-api.log || echo "Arquivo de log não encontrado"

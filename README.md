@@ -1,463 +1,213 @@
-## 🇧🇷 POC JMeter (Português)
+# POC JMeter - Teste de Performance com New Relic
 
-Este projeto é uma **Prova de Conceito (POC)** criada para demonstrar habilidades práticas em testes de performance utilizando o **Apache JMeter**. O objetivo foi simular um cenário real de autenticação e consulta de transferências bancárias, validando o desempenho da API fornecida na mentoria do Júlio de Lima.
+Este projeto demonstra como executar testes de performance com Apache JMeter e integrar os resultados com o New Relic através de uma pipeline automatizada no GitHub Actions.
 
----
+## 🚀 Funcionalidades
 
-## 🚀 Cenário Testado
+- ✅ Teste de login e transferências com JMeter
+- ✅ API mock para testes locais e em CI/CD
+- ✅ Geração automática de dashboard do JMeter
+- ✅ Integração com New Relic para monitoramento
+- ✅ Pipeline automatizada no GitHub Actions
+- ✅ Upload de artefatos (dashboard e resultados)
 
-Fluxo testado no JMeter:
+## 📋 Pré-requisitos
 
-- Login na API (`POST /login`) usando o usuário `${API_USER}`
-- Extração do token JWT da resposta
-- Requisição autenticada em `GET /transferencias` usando o header `Authorization: Bearer <token>`
-- Simulação de usuários simultâneos (configurável)
-- Geração de dashboard HTML do JMeter
-- Integração com New Relic via Metric API
+- Node.js 18+
+- Apache JMeter 5.4.1
+- Conta no New Relic (para integração)
 
-```
-- Simulação de **50 usuários simultâneos** (configurável no JMeter)
-- Geração de relatório HTML com resultados da execução
-```
+## 🛠️ Configuração Local
 
----
-
-## ⚙️ Configuração do Teste
-
-- Ferramenta: Apache JMeter 5.4.1
-- Execução: CLI (modo non-GUI)
-- Usuários: 50 threads
-- Ramp-up: 30 segundos
-- Loops: 1
-- Resultados: `results/result.jtl` e `results/dashboard/`
-
----
-
-## ✅ Variáveis de Ambiente (.env)
-
-Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
-
-```
-API_PROTOCOL=http
-API_HOST=localhost
-API_PORT=3000
-API_USER=seu_usuario_aqui
-API_PASS=sua_senha_aqui
-
-NEWRELIC_API_KEY=sua_api_key_aqui
-```
-
-### ✅ Rodando o JMeter
-
-#### Windows (CMD)
-
-```cmd
-set API_PROTOCOL=http
-set API_HOST=localhost
-set API_PORT=3000
-set API_USER=seu_usuario_aqui
-set API_PASS=sua_senha_aqui
-
-jmeter.bat -n -t test-plan\poc_transferencias.jmx -l results
-esult.jtl -e -o results\dashboard -JAPI_PROTOCOL=%API_PROTOCOL% -JAPI_HOST=%API_HOST% -JAPI_PORT=%API_PORT% -JAPI_USER=%API_USER% -JAPI_PASS=%API_PASSWORD%
-```
-
-#### PowerShell
-
-```powershell
-$env:API_PROTOCOL = "http"
-$env:API_HOST = "localhost"
-$env:API_PORT = "3000"
-$env:API_USER = "seu_usuario_aqui"
-$env:API_PASS = "sua_senha_aqui"
-
-& "C:\apache-jmeter-5.4.1\bin\jmeter.bat" -n -t test-plan\poc_transferencias.jmx -l results\result.jtl -e -o results\dashboard `
-  -JAPI_PROTOCOL=$env:API_PROTOCOL `
-  -JAPI_HOST=$env:API_HOST `
-  -JAPI_PORT=$env:API_PORT `
-  -JAPI_USER=$env:API_USER `
-  -JAPI_PASS=$env:API_PASS
-```
-
----
-
-### ✅ Rodando integração com New Relic
-
-Após a execução do teste no JMeter, você pode enviar as métricas para o New Relic.
-
-#### 📦 Instale as dependências necessárias:
+### 1. Instalação de Dependências
 
 ```bash
-npm install dotenv axios csv-parser
+npm install
 ```
 
-#### 🔐 Certifique-se de configurar sua chave no arquivo `.env`:
+### 2. Configuração das Variáveis de Ambiente
 
-```
-NEWRELIC_API_KEY=sua_api_key_aqui
-```
+Crie um arquivo `.env` na raiz do projeto:
 
-#### ▶️ Execute o script:
-
-```powershell
-node scripts/upload-to-newrelic.js
+```env
+NEWRELIC_API_KEY=sua_api_key_do_new_relic
+API_USER=julio.lima
+API_PASS=123456
 ```
 
-Esse script:
+### 3. Execução Local
 
-- Lê o arquivo `result.jtl`
-- Agrupa os resultados por `label` (ex: `/login`, `/transferencias`)
-- Calcula o tempo médio de resposta por endpoint
-- Envia a métrica `JMeter.response_time.avg` para o New Relic via Telemetry API
+#### Iniciar a API Mock
 
-💡 Funciona inclusive com contas do plano gratuito (Free Tier) da New Relic.
-
----
-
-## 🤖 CI/CD Manual com GitHub Actions
-
-Esta POC pode ser executada manualmente pela interface do GitHub Actions usando workflow_dispatch. O relatório é salvo localmente em results/dashboard e incluído como artefato para download.
-
-📄 Pipeline de exemplo (.github/workflows/jmeter-test.yml)
-
-```
-name: Run JMeter Performance Test
-
-on:
-  workflow_dispatch:
-
-jobs:
-  performance-test:
-    runs-on: ubuntu-latest
-
-    env:
-      API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
-      API_HOST: ${{ secrets.API_HOST }}
-      API_PORT: ${{ secrets.API_PORT }}
-      API_USER: ${{ secrets.API_USER }}
-      API_PASS: ${{ secrets.API_PASS }}
-      NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Setup JMeter
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y openjdk-11-jre-headless
-        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
-        tar -xzf apache-jmeter-5.4.1.tgz
-        export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
-         
-    - name: Create results folder
-      run: mkdir -p results/dashboard    
-
-    - name: Run JMeter Test
-      run: |
-        ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
-        -l results/result.jtl -e -o results/dashboard \
-        -JAPI_PROTOCOL=$API_PROTOCOL \
-        -JAPI_HOST=$API_HOST \
-        -JAPI_PORT=$API_PORT \
-        -JAPI_USER=$API_USER \
-        -JAPI_PASS=$API_PASS
-
-    - name: Upload Test Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: JMeter-Report
-        path: results/dashboard
-
-    - name: Send metrics to New Relic
-      run: |
-        npm install --prefix scripts dotenv axios csv-parser
-        node scripts/upload-to-newrelic.js
-
+```bash
+npm run start:mock-api
 ```
 
-🔐 Variáveis deverão ser definidas em Settings > Secrets and variables > Actions no seu repositório do GitHub.
+#### Executar Testes com JMeter
 
-## 📂 Estrutura do Projeto
+```bash
+# Baixar JMeter (se necessário)
+wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
+tar -xzf apache-jmeter-5.4.1.tgz
+
+# Executar testes
+./apache-jmeter-5.4.1/bin/jmeter \
+  -n \
+  -t test-plan/poc_transferencias.jmx \
+  -l results/result.jtl \
+  -JAPI_PROTOCOL=http \
+  -JAPI_HOST=localhost \
+  -JAPI_PORT=3000 \
+  -JAPI_USER=julio.lima \
+  -JAPI_PASS=123456
+
+# Gerar dashboard
+./apache-jmeter-5.4.1/bin/jmeter \
+  -g results/result.jtl \
+  -o results/dashboard
+```
+
+#### Enviar Dados para New Relic
+
+```bash
+npm run upload-nr
+```
+
+## 🔧 Configuração do GitHub Actions
+
+### Secrets Necessários
+
+Configure os seguintes secrets no seu repositório GitHub:
+
+1. **NEWRELIC_API_KEY**: Sua API key do New Relic
+2. **API_USER**: Usuário para autenticação (ex: julio.lima)
+3. **API_PASS**: Senha para autenticação (ex: 123456)
+
+### Como Configurar Secrets
+
+1. Vá para seu repositório no GitHub
+2. Clique em **Settings** → **Secrets and variables** → **Actions**
+3. Clique em **New repository secret**
+4. Adicione cada secret com o nome e valor correspondente
+
+### Executar a Pipeline
+
+1. Vá para a aba **Actions** no seu repositório
+2. Selecione o workflow **"Teste de Performance com JMeter e New Relic"**
+3. Clique em **Run workflow**
+4. Aguarde a execução completa
+
+## 📊 Resultados
+
+### Artefatos Gerados
+
+A pipeline gera os seguintes artefatos:
+
+- **jmeter-dashboard**: Dashboard HTML completo do JMeter
+- **jmeter-results**: Arquivo result.jtl com dados brutos dos testes
+
+### Métricas Enviadas para New Relic
+
+- Tempo médio de resposta por endpoint
+- Contagem de requisições
+- Labels dos testes executados
+
+## 🔍 Troubleshooting
+
+### Problemas Comuns
+
+#### 1. API Mock não inicia
+
+**Sintoma**: Pipeline falha na verificação da API
+**Solução**: Verifique os logs da API mock no final da execução
+
+#### 2. Arquivo result.jtl não gerado
+
+**Sintoma**: Erro "Arquivo result.jtl não foi gerado!"
+**Possíveis causas**:
+- API mock não está respondendo
+- Problemas de conectividade
+- Configuração incorreta do JMeter
+
+#### 3. Dashboard não gerado
+
+**Sintoma**: Erro "Dashboard não foi gerado!"
+**Solução**: Verifique se o arquivo result.jtl foi criado corretamente
+
+#### 4. Falha no upload para New Relic
+
+**Sintoma**: Erro ao enviar métricas
+**Verificações**:
+- API key do New Relic está correta
+- Arquivo result.jtl existe e tem dados
+- Conectividade com a API do New Relic
+
+### Logs de Debug
+
+A pipeline inclui logs detalhados para debug:
+
+- Status da API mock
+- Verificação de arquivos gerados
+- Logs do script de upload para New Relic
+- Logs da API mock (ao final da execução)
+
+## 📁 Estrutura do Projeto
 
 ```
 poc-jmeter/
-├── .github/
-│   └── workflows/
-│       └── jmeter-performance.yml
-├── jmeter/
-│   └── poc_transferencias.jmx
-├── images/
-│   ├── jmeter-dashboard.png
-│   └── newrelic-dashboard.png
-├── results/
-│   ├── result.jtl
-│   └── dashboard/
-├── .env
-├── README.md
+├── .github/workflows/
+│   └── jmeter-test.yml          # Pipeline do GitHub Actions
+├── mock-api/
+│   └── server.js                # API mock para testes
+├── scripts/
+│   └── upload-to-newrelic.js    # Script de upload para New Relic
+├── test-plan/
+│   └── poc_transferencias.jmx   # Plano de teste do JMeter
+├── results/                     # Resultados dos testes
+├── package.json
+└── README.md
 ```
 
----
+## 🔄 Melhorias Implementadas
 
-## 📊 Relatório de Performance
+### Pipeline do GitHub Actions
 
-### ✅ Dashboard JMeter
+- ✅ Setup adequado do Node.js com cache
+- ✅ Verificação robusta da API mock
+- ✅ Validação de arquivos gerados
+- ✅ Tratamento de erros melhorado
+- ✅ Logs detalhados para debug
+- ✅ Upload de múltiplos artefatos
 
-![Dashboard JMeter](images/jmeter-dashboard.png)
+### Script de Upload para New Relic
 
-### ✅ Dashboard New Relic
+- ✅ Validação de API key
+- ✅ Verificação de arquivo JTL
+- ✅ Tratamento de erros robusto
+- ✅ Logs detalhados
+- ✅ Timeout configurado
 
-![Dashboard New Relic](images/newrelic-dashboard.png)
+### Plano de Teste JMeter
 
-> 💡 Todos os requests foram executados com sucesso (100% de acerto), com tempos de resposta abaixo de 40ms no pior cenário (Login).
+- ✅ Uso de variáveis de ambiente
+- ✅ Configuração flexível para diferentes ambientes
 
----
+## 📈 Próximos Passos
 
-## 📌 Observações Técnicas
+1. **Adicionar mais cenários de teste**
+2. **Implementar testes de carga**
+3. **Adicionar métricas customizadas**
+4. **Integrar com outros sistemas de monitoramento**
+5. **Implementar alertas baseados em thresholds**
 
-- Extração do token feita com **JSON Extractor**
-- Header `Authorization: Bearer <token>` configurado dinamicamente
-- Os listeners do tipo **View Results Tree** foram usados apenas para depuração local no JMeter GUI
-- Integração com New Relic feita com Node.js + Axios via Metric API v1
-- Leitura de variáveis de ambiente com o pacote **dotenv**
+## 🤝 Contribuição
 
----
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
+5. Abra um Pull Request
 
-👤 Autora
+## 📄 Licença
 
-Ana Cláudia Coelho
-
-QA Engineer | Performance Testing | CI/CD
-
----
-
-## 🇺🇸 JMeter POC (English)
-
-This project is a Proof of Concept (POC) created to demonstrate practical skills in performance testing using Apache JMeter. The goal was to simulate a real scenario of authentication and querying banking transfers, validating the performance of an API provided in Júlio de Lima’s mentorship.
-
-
----
-
-## 🚀 Test Scenario
-
-Test flow in JMeter:
-
-- Login to the API (POST /login) using `${API_USER}`
-- Extract JWT token from the response
-- Authenticated request to `GET /transferencias` using Authorization: `Authorization: Bearer <token>`
-- Simulation of concurrent users (configurable)
-- Generation of HTML dashboard from JMeter
-- Integration with New Relic via Metric API
-
-```
-- Simulation of **50 concurrent users** (configurable in JMeter)
-- Generation of HTML report with execution results
-```
-
----
-
-## ⚙️ Test Configuration
-
-- Tool: Apache JMeter 5.4.1
-- Execution: CLI (non-GUI mode)
-- Users: 50 threads
-- Ramp-up: 30 seconds
-- Loops: 1
-- Results: `results/result.jtl` and `results/dashboard/`
-
----
-
-## ✅ Environment Variables (.env)
-
-Create a `.env` file in the root directory with the following content:
-
-```
-API_PROTOCOL=http
-API_HOST=localhost
-API_PORT=3000
-API_USER=your_username_here
-API_PASS=your_password_here
-
-NEWRELIC_API_KEY=your_api_key_here
-```
-
-### ✅ Running JMeter
-
-#### Windows (CMD)
-
-```cmd
-set API_PROTOCOL=http
-set API_HOST=localhost
-set API_PORT=3000
-set API_USER=your_username_here
-set API_PASS=your_password_here
-
-jmeter.bat -n -t test-plan\poc_transferencias.jmx -l results
-esult.jtl -e -o results\dashboard -JAPI_PROTOCOL=%API_PROTOCOL% -JAPI_HOST=%API_HOST% -JAPI_PORT=%API_PORT% -JAPI_USER=%API_USER% -JAPI_PASSWORD=%API_PASSWORD%
-```
-
-#### PowerShell
-
-```powershell
-$env:API_PROTOCOL = "http"
-$env:API_HOST = "localhost"
-$env:API_PORT = "3000"
-$env:API_USER = "your_username_here"
-$env:API_PASS = "your_password_here"
-
-& "C:\apache-jmeter-5.4.1\bin\jmeter.bat" -n -t test-plan\poc_transferencias.jmx -l results\result.jtl -e -o results\dashboard `
-  -JAPI_PROTOCOL=$env:API_PROTOCOL `
-  -JAPI_HOST=$env:API_HOST `
-  -JAPI_PORT=$env:API_PORT `
-  -JAPI_USER=$env:API_USER `
-  -JAPI_PASS=$env:API_PASS
-```
-
----
-
-### ✅ Running New Relic Integration
-
-After executing the JMeter test, you can send metrics to New Relic.
-
-#### 📦 Install dependencies:
-
-```bash
-npm install dotenv axios csv-parser
-```
-
-#### 🔐 Make sure your key is set in the  `.env` file:
-
-```
-NEWRELIC_API_KEY=sua_api_key_aqui
-```
-
-#### ▶️ Run the script:
-
-```powershell
-node scripts/upload-to-newrelic.js
-```
-
-This script:
-
-- Reads the `result.jtl` file
-- Groups results by `label` (e.g., `/login`, `/transferencias`)
-- Calculates average response time per endpoint
-- Sends the metric `JMeter.response_time.avg` to New Relic via Telemetry API
-
-💡 Works even with New Relic Free Tier accounts.
-
----
-
-## 🤖 Manual CI/CD with GitHub Actions
-
-This POC can be executed manually through GitHub Actions UI using workflow_dispatch. The report is saved locally under results/dashboard and included as an artifact for download.
-
-📄 Example pipeline (.github/workflows/jmeter-test.yml)
-
-
-```
-name: Run JMeter Performance Test
-
-on:
-  workflow_dispatch:
-
-jobs:
-  performance-test:
-    runs-on: ubuntu-latest
-
-    env:
-      API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
-      API_HOST: ${{ secrets.API_HOST }}
-      API_PORT: ${{ secrets.API_PORT }}
-      API_USER: ${{ secrets.API_USER }}
-      API_PASS: ${{ secrets.API_PASS }}
-      NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Setup JMeter
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y openjdk-11-jre-headless
-        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
-        tar -xzf apache-jmeter-5.4.1.tgz
-        export PATH=$PATH:$PWD/apache-jmeter-5.4.1/bin
-
-    - name: Create results folder
-      run: mkdir -p results/dashboard    
-
-    - name: Run JMeter Test
-      run: |
-        ./apache-jmeter-5.4.1/bin/jmeter -n -t test-plan/poc_transferencias.jmx \
-        -l results/result.jtl -e -o results/dashboard \
-        -JAPI_PROTOCOL=$API_PROTOCOL \
-        -JAPI_HOST=$API_HOST \
-        -JAPI_PORT=$API_PORT \
-        -JAPI_USER=$API_USER \
-        -JAPI_PASS=$API_PASS
-
-    - name: Upload Test Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: JMeter-Report
-        path: results/dashboard
-
-    - name: Send metrics to New Relic
-      run: |
-        npm install --prefix scripts dotenv axios csv-parser
-        node scripts/upload-to-newrelic.js
-```
-🔐 Variables must be defined in Settings > Secrets and variables > Actions in your GitHub repository.
-
-## 📂 Estrutura do Projeto
-
-```
-poc-jmeter/
-├── .github/
-│   └── workflows/
-│       └── jmeter-performance.yml
-├── jmeter/
-│   └── poc_transferencias.jmx
-├── images/
-│   ├── jmeter-dashboard.png
-│   └── newrelic-dashboard.png
-├── results/
-│   ├── result.jtl
-│   └── dashboard/
-├── .env
-├── README.md
-```
-
----
-
-## 📊 Performance Report
-
-### ✅ JMeter Dashboard
-
-![Dashboard JMeter](images/jmeter-dashboard.png)
-
-### ✅ New Relic Dashboard
-
-![Dashboard New Relic](images/newrelic-dashboard.png)
-
-> 💡 All requests were successfully executed (100% success rate), with response times under 40ms in the worst-case scenario (Login).
-
----
-
-## 📌 Technical Notes
-
-- Token extracted with **JSON Extractor**
-- `Authorization: Bearer <token>` header dynamically configured
-- **View Results Tree** listeners were used only for local debugging in JMeter GUI
-- New Relic integration built with Node.js + Axios via Metric API v1
-- Environment variables handled using **dotenv** package
-
----
-
-👤 Autora
-
-Ana Cláudia Coelho
-
-QA Engineer | Performance Testing | CI/CD
-
----
+Este projeto está sob a licença ISC.
