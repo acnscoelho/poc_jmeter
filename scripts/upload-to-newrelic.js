@@ -10,9 +10,12 @@ async function main() {
   console.log("Iniciando upload de métricas para o New Relic...");
   
   // Verifica se a API key está disponível
-  if (!NEWRELIC_API_KEY) {
-    console.error("ERRO: NEWRELIC_API_KEY não está definida!");
-    process.exit(1);
+  if (!NEWRELIC_API_KEY || NEWRELIC_API_KEY === 'dummy') {
+    console.log("⚠️  AVISO: NEWRELIC_API_KEY não está configurada ou é inválida!");
+    console.log("📝 Para configurar, vá em Settings > Secrets and variables > Actions");
+    console.log("🔑 Adicione o secret 'NEWRELIC_API_KEY' com sua chave da API do New Relic");
+    console.log("⏭️  Pulando upload para o New Relic...");
+    process.exit(0); // Sai com sucesso, não com erro
   }
 
   // Verifica se o arquivo JTL existe

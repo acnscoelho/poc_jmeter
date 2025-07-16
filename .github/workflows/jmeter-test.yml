@@ -130,13 +130,17 @@ jobs:
       - name: Envia dados para o New Relic
         run: |
           if [ -z "$NEWRELIC_API_KEY" ]; then
-            echo "ERRO: NEWRELIC_API_KEY não está definida no ambiente!"
-            exit 1
+            echo "⚠️  AVISO: NEWRELIC_API_KEY não está configurada!"
+            echo "📝 Para configurar, vá em Settings > Secrets and variables > Actions"
+            echo "🔑 Adicione o secret 'NEWRELIC_API_KEY' com sua chave da API do New Relic"
+            echo "⏭️  Pulando upload para o New Relic..."
+            echo "NEWRELIC_API_KEY=dummy" > .env
+          else
+            echo "NEWRELIC_API_KEY=$NEWRELIC_API_KEY" > .env
+            echo "Arquivo .env criado com sucesso"
+            cat .env | sed 's/NEWRELIC_API_KEY=.*/NEWRELIC_API_KEY=***HIDDEN***/'
+            npm run upload-nr
           fi
-          echo "NEWRELIC_API_KEY=$NEWRELIC_API_KEY" > .env
-          echo "Arquivo .env criado com sucesso"
-          cat .env | sed 's/NEWRELIC_API_KEY=.*/NEWRELIC_API_KEY=***HIDDEN***/'
-          npm run upload-nr
 
       - name: Faz upload do arquivo result.jtl como artefato
         uses: actions/upload-artifact@v4
