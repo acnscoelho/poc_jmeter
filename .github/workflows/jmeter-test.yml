@@ -1,6 +1,4 @@
-# CI de Nível 01 - Disparo manual a partir de 1 clique
-
-name: 'Execução Manual'
+name: 'Teste de Performance com JMeter e New Relic'
 
 on:
   workflow_dispatch:
@@ -10,61 +8,62 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      API_PROTOCOL: ${{ secrets.API_PROTOCOL }}
-      API_HOST: ${{ secrets.API_HOST }}
-      API_PORT: ${{ secrets.API_PORT }}
+      API_PROTOCOL: http
+      API_HOST: localhost
+      API_PORT: 3000
       API_USER: ${{ secrets.API_USER }}
       API_PASS: ${{ secrets.API_PASS }}
       NEWRELIC_API_KEY: ${{ secrets.NEWRELIC_API_KEY }}
-  
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout do código
+        uses: actions/checkout@v4
 
-      - name: Instalando Yarn
-        run: npm install -g yarn
+      - name: Instala dependências do projeto (Node.js)
+        run: |
+          npm install
 
-      - name: Instalando dependências
-        run: yarn
-
-      - name: Instalar dependências do script de upload
+      - name: Instala dependências adicionais para scripts
         run: npm install --prefix scripts dotenv axios csv-parser
 
-      - name: Download do Apache JMeter
+      - name: Baixa e extrai o Apache JMeter
         run: |
           wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
           tar -xzf apache-jmeter-5.4.1.tgz
 
-      - name: Criar diretórios de saída
+      - name: Inicia a API mock
+        run: nohup node mock-api/server.js > mock-api.log 2>&1 &
+
+      - name: Aguarda a API mock iniciar
+        run: sleep 5
+
+      - name: Cria diretório para relatórios
         run: mkdir -p results/dashboard
 
-      - name: Start Mock API
+      - name: Executa testes de performance com JMeter
         run: |
-          nohup node mock-api/server.js > mock-api.log 2>&1 &
-  
-      - name: Run JMeter Test
+          ./apache-jmeter-5.4.1/bin/jmeter \
+            -n \
+            -t test-plan/poc_transferencias.jmx \
+            -l results/result.jtl \
+            -JAPI_PROTOCOL=$API_PROTOCOL \
+            -JAPI_HOST=$API_HOST \
+            -JAPI_PORT=$API_PORT \
+            -JAPI_USER=$API_USER \
+            -JAPI_PASS=$API_PASS
+
+      - name: Gera dashboard do JMeter
         run: |
-          ./apache-jmeter-5.4.1/bin/jmeter -n \
-          -t test-plan/poc_transferencias.jmx \
-          -l results/result.jtl \
-          -Jjmeter.save.saveservice.output_format=csv \
-          -Jjmeter.save.saveservice.print_field_names=true \
-          -JAPI_PROTOCOL=$API_PROTOCOL \
-          -JAPI_HOST=$API_HOST \
-          -JAPI_PORT=$API_PORT \
-          -JAPI_USER=$API_USER \
-          -JAPI_PASS=$API_PASS
+          ./apache-jmeter-5.4.1/bin/jmeter \
+            -g results/result.jtl \
+            -o results/dashboard
 
-      - name: Generate HTML Dashboard
-        if: ${{ success() && hashFiles('results/result.jtl') != '' }}
-        run: |
-          ./apache-jmeter-5.4.1/bin/jmeter -g results/result.jtl -o results/dashboard
+      - name: Envia dados para o New Relic
+        run: npm run upload-nr
 
-      - name: Enviar resultado para o New Relic
-        run: yarn run upload-nr
-
-      - name: Upload do Dashboard gerado
+      - name: Faz upload do dashboard como artefato
         uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
         with:
           name: jmeter-dashboard
           path: results/dashboard
+          if-no-files-found: warn
