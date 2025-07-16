@@ -85,7 +85,19 @@ echo "🧪 Executando teste do JMeter..."
     -JAPI_HOST=localhost \
     -JAPI_PORT=3000 \
     -JAPI_USER=julio.lima \
-    -JAPI_PASS=123456
+    -JAPI_PASS=123456 \
+    -Jjmeter.save.saveservice.output_format=csv \
+    -Jjmeter.save.saveservice.assertion_results=all \
+    -Jjmeter.save.saveservice.bytes=true \
+    -Jjmeter.save.saveservice.label=true \
+    -Jjmeter.save.saveservice.latency=true \
+    -Jjmeter.save.saveservice.response_code=true \
+    -Jjmeter.save.saveservice.response_message=true \
+    -Jjmeter.save.saveservice.successful=true \
+    -Jjmeter.save.saveservice.thread_counts=true \
+    -Jjmeter.save.saveservice.thread_name=true \
+    -Jjmeter.save.saveservice.time=true \
+    -Jjmeter.save.saveservice.connect_time=true
 
 # Verifica se o arquivo result.jtl foi gerado
 if [ ! -f "results/result.jtl" ]; then
