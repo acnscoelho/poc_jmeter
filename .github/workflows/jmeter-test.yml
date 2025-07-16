@@ -115,18 +115,19 @@ jobs:
 
       - name: Remove coluna failureMessage do result.jtl (Python)
         run: |
-          python3 -c '
-import csv
-with open("results/result.jtl", newline="") as infile, open("results/result_clean.jtl", "w", newline="") as outfile:
+          echo "import csv
+with open('results/result.jtl', newline='') as infile, open('results/result_clean.jtl', 'w', newline='') as outfile:
     reader = csv.DictReader(infile)
-    fieldnames = [f for f in reader.fieldnames if f != "failureMessage"]
+    fieldnames = [f for f in reader.fieldnames if f != 'failureMessage']
     writer = csv.DictWriter(outfile, fieldnames=fieldnames)
     writer.writeheader()
     for row in reader:
-        row.pop("failureMessage", None)
+        row.pop('failureMessage', None)
         writer.writerow(row)
-'
+" > remove_failure_message.py
+          python3 remove_failure_message.py
           mv results/result_clean.jtl results/result.jtl
+          rm remove_failure_message.py
 
       - name: Gera dashboard do JMeter
         run: |
