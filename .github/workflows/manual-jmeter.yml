@@ -1,0 +1,13 @@
+name: Teste de Performance com JMeter e New Relic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Hello World
+        run: echo "Pipeline criada com sucesso!"
