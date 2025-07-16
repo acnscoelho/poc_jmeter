@@ -117,9 +117,25 @@ jobs:
         run: |
           node scripts/clean-jmeter-results.js results/result.jtl results/result_clean.jtl
 
+      - name: Debug - Verifica variáveis de ambiente
+        run: |
+          echo "NEWRELIC_API_KEY está definida: ${{ secrets.NEWRELIC_API_KEY != '' }}"
+          echo "Tamanho da API key: ${#NEWRELIC_API_KEY}"
+          if [ -n "$NEWRELIC_API_KEY" ]; then
+            echo "API key definida (primeiros 10 caracteres): ${NEWRELIC_API_KEY:0:10}..."
+          else
+            echo "API key NÃO está definida!"
+          fi
+
       - name: Envia dados para o New Relic
         run: |
+          if [ -z "$NEWRELIC_API_KEY" ]; then
+            echo "ERRO: NEWRELIC_API_KEY não está definida no ambiente!"
+            exit 1
+          fi
           echo "NEWRELIC_API_KEY=$NEWRELIC_API_KEY" > .env
+          echo "Arquivo .env criado com sucesso"
+          cat .env | sed 's/NEWRELIC_API_KEY=.*/NEWRELIC_API_KEY=***HIDDEN***/'
           npm run upload-nr
 
       - name: Faz upload do arquivo result.jtl como artefato
