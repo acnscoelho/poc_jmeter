@@ -113,6 +113,11 @@ jobs:
           head -20 results/result.jtl || cat results/result.jtl
           echo "=== Fim do trecho ==="
 
+      - name: Remove coluna failureMessage do result.jtl
+        run: |
+          awk -F, 'BEGIN{OFS=","} NR==1{for(i=1;i<=NF;i++) if($i=="failureMessage") c=i} {if(c){$c=""; sub(/^,|,$/,"")} print}' results/result.jtl > results/result_clean.jtl
+          mv results/result_clean.jtl results/result.jtl
+
       - name: Gera dashboard do JMeter
         run: |
           ./apache-jmeter-5.4.1/bin/jmeter \
