@@ -115,8 +115,11 @@ jobs:
 
       - name: Remove coluna failureMessage do result.jtl
         run: |
-          awk -F, 'BEGIN{OFS=","} NR==1{for(i=1;i<=NF;i++) if($i=="failureMessage") c=i} {if(c){$c=""; sub(/^,|,$/,"")} print}' results/result.jtl > results/result_clean.jtl
-          mv results/result_clean.jtl results/result.jtl
+          col=$(head -1 results/result.jtl | tr ',' '\n' | grep -n '^failureMessage$' | cut -d: -f1)
+          if [ -n "$col" ]; then
+            cut --complement -d, -f"$col" results/result.jtl > results/result_clean.jtl
+            mv results/result_clean.jtl results/result.jtl
+          fi
 
       - name: Gera dashboard do JMeter
         run: |
