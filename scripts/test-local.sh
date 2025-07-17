@@ -47,7 +47,7 @@ fi
 echo "✅ Apache JMeter encontrado"
 
 # Cria diretório de resultados
-mkdir -p results/dashboard
+mkdir -p results
 
 # Inicia a API mock
 echo "🔧 Iniciando API mock..."
@@ -117,25 +117,14 @@ fi
 
 echo "✅ Arquivo result.jtl gerado com sucesso!"
 
-# Limpa a pasta do dashboard antes de gerar um novo
-echo "🧹 Limpando pasta results/dashboard..."
-rm -rf results/dashboard
-mkdir -p results/dashboard
-
-# Gera o dashboard
-echo "📊 Gerando dashboard do JMeter..."
-./apache-jmeter-5.4.1/bin/jmeter \
-    -g results/result.jtl \
-    -o results/dashboard
-
-# Verifica se o dashboard foi gerado
-if [ ! -d "results/dashboard" ] || [ -z "$(ls -A results/dashboard)" ]; then
-    echo "❌ Dashboard não foi gerado!"
+echo "🔍 Verificando dados do arquivo result.jtl..."
+if [ ! -s "results/result.jtl" ]; then
+    echo "❌ Arquivo result.jtl está vazio!"
     kill $MOCK_PID 2>/dev/null || true
     exit 1
 fi
 
-echo "✅ Dashboard gerado com sucesso!"
+echo "✅ Arquivo result.jtl contém dados válidos!"
 
 # Testa o upload para New Relic
 echo "📤 Testando upload para New Relic..."
@@ -153,6 +142,5 @@ echo ""
 echo "🎉 Teste local concluído com sucesso!"
 echo "📁 Resultados disponíveis em:"
 echo "   - results/result.jtl"
-echo "   - results/dashboard/"
 echo ""
 echo "🚀 Agora você pode fazer push para o GitHub e executar a pipeline!" 

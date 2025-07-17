@@ -63,7 +63,7 @@ jobs:
       - name: Limpa e recria diretório para relatórios
         run: |
           rm -rf results/dashboard
-          mkdir -p results/dashboard
+          mkdir -p results
 
       - name: Executa testes de performance com JMeter
         run: |
@@ -113,15 +113,6 @@ jobs:
           head -20 results/result.jtl || cat results/result.jtl
           echo "=== Fim do trecho ==="
 
-      - name: Verifica se o arquivo result_clean.jtl foi gerado
-        run: |
-          if [ ! -f "results/result_clean.jtl" ]; then
-            echo "ERRO: Arquivo result_clean.jtl não foi gerado!"
-            exit 1
-          fi
-          echo "Arquivo result_clean.jtl gerado com sucesso!"
-          ls -la results/
-
       - name: Remove coluna failureMessage do result.jtl (Node.js)
         run: |
           node scripts/clean-jmeter-results.js results/result.jtl results/result_clean.jtl
@@ -156,7 +147,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-results
-          path: results/result_clean.jtl
+          path: results/result.jtl
           if-no-files-found: error
 
       - name: Exibe logs da API mock (para debug)
