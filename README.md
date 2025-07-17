@@ -1,4 +1,4 @@
-﻿# POC JMeter - Teste de Performance com New Relic
+# POC JMeter - Teste de Performance com New Relic
 
 Este projeto demonstra como executar testes de performance com Apache JMeter e integrar os resultados com o New Relic através de uma pipeline automatizada no GitHub Actions.
 
@@ -41,13 +41,12 @@ npm run start:mock-api
 ```
 
 #### Executar Testes com JMeter
-
-# Baixar JMeter (se necessário)
+#### Baixar JMeter (se necessário)
 ```bash
 wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.40.1gz
 tar -xzf apache-jmeter-5.40.1
 ```
-# Executar testes
+#### Executar testes
 ```bash
 ./apache-jmeter-5.41/bin/jmeter \
   -n \
@@ -58,7 +57,7 @@ tar -xzf apache-jmeter-5.40.1
   -JAPI_PORT=300\
   -JAPI_USER=julio.lima \
   -JAPI_PASS=123456
-```
+  ```
 
 #### Enviar Dados para New Relic
 
@@ -76,7 +75,7 @@ Configure os seguintes secrets no seu repositório GitHub:
 3. **API_PASS**: Senha para autenticação (ex:123456)
 
 ### Como Configurar Secrets
-. V para seu repositório no GitHub
+1. Vá para seu repositório no GitHub
 2. Clique em **Settings** → **Secrets and variables** → **Actions**
 3. Clique em **New repository secret**
 4. Adicione cada secret com o nome e valor correspondente
@@ -84,7 +83,8 @@ Configure os seguintes secrets no seu repositório GitHub:
 ### Executar a Pipeline
 1. Vá para a aba **Actions** no seu repositório
 2. Selecione o workflow **"Teste de Performance com JMeter e New Relic"**
-3. Clique em **Run workflow**4Aguarde a execução completa
+3. Clique em **Run workflow**
+4. Aguarde a execução completa
 
 ## 📊 Resultados
 
